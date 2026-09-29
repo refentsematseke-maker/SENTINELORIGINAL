@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentinel — Community Safety Network</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="app-shell">
+    <!-- APP HEADER -->
+    <header class="app-header">
+      <div class="brand-logo">
+        <i class="fa-solid fa-shield-halved"></i> SENTINEL
+      </div>
+      <div class="header-actions">
+        <span id="live-badge" class="badge badge-green" style="display:none;" title="Connected to the live demo backend">
+          <i class="fa-solid fa-tower-broadcast"></i> <span id="live-badge-text">LIVE</span>
+        </span>
+        <button class="sos-btn" onclick="app.emergencyCall()">
+          <i class="fa-solid fa-phone"></i> 10111
+        </button>
+        <div class="wallet-badge" onclick="app.openWalletModal()">
+          <i class="fa-solid fa-coins" style="color:#f59e0b;"></i>
+          <span id="user-points">350</span> PTS
+        </div>
+      </div>
+    </header>
+
+    <!-- DYNAMIC PAGE VIEW CONTAINER -->
+    <main class="page-container" id="main-view">
+      <!-- Pages are rendered here by js/app.js -->
+    </main>
+
+    <!-- MAIN BOTTOM NAVIGATION -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" id="nav-feed" onclick="app.navigateTo('feed')">
+        <i class="fa-solid fa-house"></i>
+        <span>Home</span>
+      </button>
+      <button class="nav-item" id="nav-cases" onclick="app.navigateTo('cases')">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <span>Cases</span>
+      </button>
+      <button class="nav-item report-fab" onclick="app.openReportModal()">
+        <i class="fa-solid fa-circle-plus"></i>
+        <span>Report</span>
+      </button>
+      <button class="nav-item" id="nav-fed" onclick="app.navigateTo('fed')">
+        <i class="fa-solid fa-car-side"></i>
+        <span>FED</span>
+      </button>
+      <button class="nav-item" id="nav-more" onclick="app.navigateTo('more')">
+        <i class="fa-solid fa-bars"></i>
+        <span>More</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- MODAL: REPORT CREATION -->
+  <div class="modal-overlay" id="modal-report">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Submit Report / Incident</h3>
+        <button class="modal-close" onclick="app.closeModals()">&times;</button>
+      </div>
+      <form onsubmit="app.handleReportSubmit(event)">
+        <div class="form-group">
+          <label>Contributing as</label>
+          <div class="role-toggle">
+            <div class="role-option selected" onclick="app.selectRole('reporter', this)">Reporter</div>
+            <div class="role-option" onclick="app.selectRole('compiler', this)">Evidence Compiler</div>
+          </div>
+          <p class="form-hint">Reporters file the original incident. Evidence Compilers cross-reference reports into a case file for authorities.</p>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select class="form-control" id="report-category" required>
+            <option value="crime">Crime / Suspicious Activity</option>
+            <option value="missing">Missing Person</option>
+            <option value="property">Lost / Stolen Property</option>
+            <option value="transport">E-Hailing Transport Safety</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" class="form-control" id="report-title" placeholder="Brief incident title..." required oninput="app.updateReportAiPreview()">
+        </div>
+        <div class="form-group">
+          <label>Details & Clues</label>
+          <textarea class="form-control" id="report-desc" rows="3" placeholder="Provide accurate, factual details..." required oninput="app.updateReportAiPreview()"></textarea>
+          <div id="report-ai-preview" class="ai-insight" style="display:none;"></div>
+        </div>
+        <div class="form-group">
+          <label>Location / Area</label>
+          <input type="text" class="form-control" id="report-location" placeholder="Area, street or landmark (avoid private addresses)">
+        </div>
+        <div class="form-group">
+          <label>Verification ID (optional — 3x point bonus)</label>
+          <input type="text" class="form-control" id="report-id" placeholder="Student / National ID reference...">
+          <p class="form-hint">Verifying boosts your trust score and unlocks a 3x points bonus on this report. Your identity still stays hidden on the public feed.</p>
+        </div>
+        <button type="submit" class="btn-submit">Submit Anonymously</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DETECTIVE LEAD SUBMISSION -->
+  <div class="modal-overlay" id="modal-lead">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-magnifying-glass"></i> Submit Detective Lead</h3>
+        <button class="modal-close" onclick="app.closeModals()">&times;</button>
+      </div>
+      <form onsubmit="app.handleLeadSubmit(event)">
+        <input type="hidden" id="lead-case-id">
+        <div class="form-group">
+          <label>Verified clue / observation</label>
+          <textarea class="form-control" id="lead-text" rows="3" placeholder="Describe witness information, matching vehicle pattern, timeline, etc..." required oninput="app.updateLeadAiPreview()"></textarea>
+          <div id="lead-ai-preview" class="ai-insight" style="display:none;"></div>
+        </div>
+        <p class="form-hint" style="margin-bottom:10px;">
+          Every lead runs through AI-assisted tracing to catch spam and unverified accusations before it's shown as a verified lead.
+        </p>
+        <button type="submit" class="btn-submit">Submit Lead</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: FED DRIVER FLAG -->
+  <div class="modal-overlay" id="modal-flag">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-car-side"></i> Flag a Driver / Vehicle</h3>
+        <button class="modal-close" onclick="app.closeModals()">&times;</button>
+      </div>
+      <form onsubmit="app.handleFlagSubmit(event)">
+        <div class="form-group">
+          <label>Number plate</label>
+          <input type="text" class="form-control" id="flag-plate" placeholder="e.g. GP 12 AB GP" required>
+        </div>
+        <div class="form-group">
+          <label>What happened?</label>
+          <textarea class="form-control" id="flag-reason" rows="3" placeholder="Describe the safety concern..." required oninput="app.updateFlagAiPreview()"></textarea>
+          <div id="flag-ai-preview" class="ai-insight" style="display:none;"></div>
+        </div>
+        <button type="submit" class="btn-submit">Submit Flag (+15 PTS)</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: IDENTITY VERIFICATION -->
+  <div class="modal-overlay" id="modal-verify">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-id-card"></i> Verify Identity</h3>
+        <button class="modal-close" onclick="app.closeModals()">&times;</button>
+      </div>
+      <form onsubmit="app.handleVerifySubmit(event)">
+        <div class="form-group">
+          <label>Document type</label>
+          <select class="form-control" id="verify-doc-type" required>
+            <option>Student ID</option>
+            <option>National ID</option>
+            <option>Passport</option>
+            <option>Driver's Licence</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Document reference number</label>
+          <input type="text" class="form-control" id="verify-doc-number" placeholder="Enter reference number..." required>
+        </div>
+        <p class="form-hint" style="margin-bottom:10px;">Simulated check only — a production build would call a licensed identity-verification provider. You can add more than one document type for a higher trust score.</p>
+        <button type="submit" class="btn-submit">Verify Document</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: WALLET & EARNINGS -->
+  <div class="modal-overlay" id="modal-wallet">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-wallet"></i> Points Wallet</h3>
+        <button class="modal-close" onclick="app.closeModals()">&times;</button>
+      </div>
+      <div style="text-align: center; padding: 15px 0;">
+        <div style="font-size: 2.3rem; font-weight: 800; background: var(--gradient-ig); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="wallet-balance-modal">350 PTS</div>
+        <p style="font-size: 0.82rem; color: var(--text-muted);" id="wallet-cash-value">Simulated cash value</p>
+      </div>
+      <div class="police-panel">
+        <h4 style="font-size:0.85rem; color:var(--ig-purple); margin-bottom:4px;" id="wallet-tier-name">Rank</h4>
+        <p style="font-size:0.75rem; color:#4a4a55;" id="wallet-tier-desc">Payout multiplier details.</p>
+      </div>
+      <button class="btn-submit green" style="margin-top:12px;" onclick="app.requestCashOut()">Request Cash Out</button>
+    </div>
+  </div>
+
+  <!-- JS modules -->
+  <script src="js/data.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/fraudEngine.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Real-time layer: only does anything if server/server.js is running.
+       Loaded from a CDN so the app still opens fine (as a local demo) with
+       no internet access or no backend — see js/realtime.js for details. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="js/realtime.js"></script>
+
+  <script>
+    // Keep the wallet modal's live values in sync with the app's render cycle.
+    const _origRender = CommunitySafetyApp.prototype.render;
+    CommunitySafetyApp.prototype.render = function () {
+      _origRender.call(this);
+      const tier = this.user.tier();
+      const balEl = document.getElementById('wallet-balance-modal');
+      const cashEl = document.getElementById('wallet-cash-value');
+      const tierNameEl = document.getElementById('wallet-tier-name');
+      const tierDescEl = document.getElementById('wallet-tier-desc');
+      if (balEl) balEl.innerText = `${this.user.points} PTS`;
+      if (cashEl) cashEl.innerText = `Simulated cash value: R${(this.user.points * 0.5).toFixed(2)} ZAR`;
+      if (tierNameEl) tierNameEl.innerText = `Promotional Rank: ${tier.name}`;
+      if (tierDescEl) tierDescEl.innerText = `${tier.perk} Reach the next tier by contributing verified, useful reports and leads.`;
+    };
+  </script>
+</body>
+</html>
